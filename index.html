@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MediStock — Medical Shop Inventory</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.6.0/jspdf.plugin.autotable.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#f0f4f8;--surface:#fff;--surface2:#f7f9fc;--border:#e2e8f0;
+  --accent:#1a6b4a;--accent-light:#dcfce7;--accent-dark:#155a3c;
+  --text:#0f172a;--text2:#475569;--text3:#94a3b8;
+  --danger:#ef4444;--danger-light:#fee2e2;
+  --warning:#f59e0b;--warning-light:#fef3c7;
+  --info:#3b82f6;--info-light:#dbeafe;
+  --orange:#ea580c;--orange-light:#ffedd5;
+  --purple:#7c3aed;--purple-light:#ede9fe;
+  --sw:222px;--r:12px;
+  --sh:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.04);
+  --shm:0 8px 32px rgba(0,0,0,.13);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+#root{display:flex;min-height:100vh;}
+
+/* LOGIN */
+.login-wrap{min-height:100vh;width:100%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#0a1f14 0%,#1a6b4a 60%,#0f2d1f 100%);}
+.login-card{background:#fff;border-radius:20px;padding:40px 36px;width:100%;max-width:390px;box-shadow:0 24px 64px rgba(0,0,0,.35);}
+.login-logo{text-align:center;margin-bottom:28px;}
+.login-logo-icon{width:52px;height:52px;background:var(--accent-light);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;}
+.login-logo h1{font-size:22px;font-weight:700;color:var(--accent);}
+.login-logo p{font-size:12px;color:var(--text3);margin-top:3px;}
+.lfg{margin-bottom:14px;}
+.lfg label{display:block;font-size:12px;font-weight:500;color:var(--text2);margin-bottom:5px;}
+.lfg input{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:9px;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;transition:border .15s,box-shadow .15s;}
+.lfg input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(26,107,74,.12);}
+.login-btn{width:100%;padding:11px;background:var(--accent);color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:4px;transition:background .15s;}
+.login-btn:hover{background:var(--accent-dark);}
+.login-err{background:var(--danger-light);color:#991b1b;border:1px solid #fca5a5;border-radius:8px;padding:8px 12px;font-size:12px;margin-bottom:14px;display:flex;align-items:center;gap:6px;}
+.login-hint{font-size:11px;color:var(--text3);text-align:center;margin-top:14px;line-height:1.7;}
+.login-hint b{color:var(--text2);}
+.cplink{font-size:12px;color:var(--accent);cursor:pointer;text-decoration:underline;text-align:center;display:block;margin-top:10px;}
+
+/* SIDEBAR */
+.sidebar{width:var(--sw);background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;height:100vh;top:0;left:0;z-index:100;}
+.sidebar-logo{padding:20px 18px 14px;border-bottom:1px solid var(--border);}
+.sidebar-logo h1{font-size:16px;font-weight:700;color:var(--accent);}
+.sidebar-logo p{font-size:10px;color:var(--text3);margin-top:2px;}
+.sidebar-nav{flex:1;padding:10px 8px;display:flex;flex-direction:column;gap:2px;overflow-y:auto;}
+.nav-item{display:flex;align-items:center;gap:9px;padding:9px 12px;border-radius:9px;cursor:pointer;font-size:13px;font-weight:400;color:var(--text2);transition:all .15s;border:none;background:none;width:100%;text-align:left;}
+.nav-item:hover{background:var(--bg);color:var(--text);}
+.nav-item.active{background:var(--accent-light);color:var(--accent);font-weight:500;}
+.nav-item svg{width:15px;height:15px;flex-shrink:0;}
+.sidebar-footer{padding:12px 14px;border-top:1px solid var(--border);}
+.sidebar-footer p{font-size:10px;color:var(--text3);margin-bottom:8px;}
+.logout-btn{width:100%;padding:7px;background:var(--danger-light);color:var(--danger);border:1px solid #fca5a5;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:6px;justify-content:center;transition:all .15s;}
+.logout-btn:hover{background:#fecaca;}
+
+/* MAIN */
+.main{margin-left:var(--sw);flex:1;padding:26px 30px;max-width:1120px;}
+.page-header{margin-bottom:20px;}
+.page-header h2{font-size:21px;font-weight:600;letter-spacing:-.4px;}
+.page-header p{font-size:13px;color:var(--text2);margin-top:3px;}
+
+/* STAT */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;margin-bottom:20px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:15px 17px;box-shadow:var(--sh);}
+.stat-label{font-size:10.5px;color:var(--text3);font-weight:600;letter-spacing:.05em;text-transform:uppercase;}
+.stat-value{font-size:22px;font-weight:700;letter-spacing:-.5px;margin-top:5px;}
+.stat-sub{font-size:11px;color:var(--text2);margin-top:3px;}
+
+/* CARD */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px;box-shadow:var(--sh);margin-bottom:15px;}
+.card-title{font-size:13.5px;font-weight:600;margin-bottom:13px;}
+
+/* TABLE */
+.twrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:12.5px;}
+th{padding:8px 12px;text-align:left;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border);background:var(--surface2);white-space:nowrap;}
+td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface2);}
+
+/* BADGES */
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:500;white-space:nowrap;}
+.bg{background:var(--accent-light);color:var(--accent);}
+.br{background:var(--danger-light);color:var(--danger);}
+.by{background:var(--warning-light);color:#b45309;}
+.bb{background:var(--info-light);color:var(--info);}
+.bo{background:var(--orange-light);color:var(--orange);}
+.bp{background:var(--purple-light);color:var(--purple);}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all .15s;font-family:'DM Sans',sans-serif;white-space:nowrap;}
+.btn svg{width:13px;height:13px;flex-shrink:0;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{background:var(--accent-dark);}
+.btn-secondary{background:var(--surface);color:var(--text2);border:1px solid var(--border);}
+.btn-secondary:hover{background:var(--bg);}
+.btn-orange{background:var(--orange-light);color:var(--orange);border:1px solid #fed7aa;}
+.btn-orange:hover{background:#fed7aa;}
+.btn-sm{padding:5px 10px;font-size:12px;border-radius:6px;}
+.bti{padding:5px 9px;border-radius:6px;background:none;border:1px solid var(--border);cursor:pointer;color:var(--text2);transition:all .15s;display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-family:'DM Sans',sans-serif;font-weight:500;}
+.bti svg{width:12px;height:12px;flex-shrink:0;}
+.bti:hover{background:var(--bg);}
+.bti.del{border-color:#fca5a5;color:var(--danger);background:var(--danger-light);}
+.bti.del:hover{background:#fecaca;}
+.bti.wo{border-color:#fed7aa;color:var(--orange);background:var(--orange-light);}
+.bti.wo:hover{background:#fed7aa;}
+
+/* MODAL */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.42);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;}
+.modal{background:var(--surface);border-radius:16px;padding:26px;width:100%;max-width:540px;max-height:92vh;overflow-y:auto;box-shadow:var(--shm);}
+.modal h3{font-size:16px;font-weight:600;margin-bottom:18px;}
+.mform{display:flex;flex-direction:column;gap:13px;}
+.fg{display:flex;flex-direction:column;gap:5px;}
+.fg label{font-size:11.5px;font-weight:500;color:var(--text2);}
+.fg input,.fg select,.fg textarea{padding:8px 11px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--text);transition:border .15s;outline:none;width:100%;}
+.fg textarea{resize:vertical;min-height:64px;}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(26,107,74,.1);}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:13px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:13px;}
+.mfooter{display:flex;gap:9px;justify-content:flex-end;margin-top:20px;}
+
+/* TOOLBAR */
+.toolbar{display:flex;align-items:center;gap:8px;margin-bottom:15px;flex-wrap:wrap;}
+.sbox{display:flex;align-items:center;gap:7px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:7px 11px;flex:1;min-width:170px;}
+.sbox input{border:none;outline:none;font-size:13px;background:transparent;color:var(--text);width:100%;}
+.sbox svg{color:var(--text3);width:14px;height:14px;flex-shrink:0;}
+select.flt{padding:7px 11px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text);font-family:'DM Sans',sans-serif;outline:none;height:35px;}
+
+/* ALERTS */
+.alert{padding:7px 12px;border-radius:8px;font-size:12px;margin-bottom:9px;display:flex;align-items:center;gap:6px;}
+.alert svg{width:13px;height:13px;flex-shrink:0;}
+.aw{background:var(--warning-light);color:#92400e;border:1px solid #fde68a;}
+.ad{background:var(--danger-light);color:#991b1b;border:1px solid #fca5a5;}
+.ao{background:var(--orange-light);color:#9a3412;border:1px solid #fed7aa;}
+
+/* MISC */
+.pp{color:#16a34a;font-weight:600;font-family:'DM Mono',monospace;}
+.pn{color:var(--danger);font-weight:600;font-family:'DM Mono',monospace;}
+.mono{font-family:'DM Mono',monospace;}
+.empty{text-align:center;padding:40px 20px;color:var(--text3);}
+.empty p{font-size:13px;}
+.infopill{display:flex;align-items:center;gap:6px;background:var(--accent-light);color:var(--accent);border-radius:8px;padding:8px 12px;font-size:12px;border:1px solid #bbf7d0;}
+.warnpill{display:flex;align-items:center;gap:6px;background:var(--orange-light);color:var(--orange);border-radius:8px;padding:8px 12px;font-size:12px;border:1px solid #fed7aa;}
+.calcpill{background:var(--info-light);border-radius:8px;padding:9px 12px;font-size:12.5px;color:var(--info);border:1px solid #bfdbfe;}
+.notecell{font-size:11.5px;color:var(--text2);font-style:italic;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+@media(max-width:768px){
+  .sidebar{transform:translateX(-100%);}
+  .main{margin-left:0;padding:14px;}
+  .stat-grid{grid-template-columns:1fr 1fr;}
+  .g2,.g3{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useMemo, useCallback } = React;
+
+// ── Helpers ──────────────────────────────────────────────────
+const san  = s => String(s||'').trim().slice(0,400);
+const sNum = v => { const n=parseFloat(v); return isNaN(n)||n<0?0:n; };
+const load = (k,d=[]) => { try{const v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch{return d;} };
+const save = (k,v) => { try{localStorage.setItem(k,JSON.stringify(v));}catch{alert('Storage full!');} };
+const uid  = () => Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const fmt  = n => '₹'+Number(n).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fD   = d => d?new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}):'—';
+const today= () => new Date().toISOString().split('T')[0];
+const dLeft= d => Math.ceil((new Date(d)-new Date())/86400000);
+const years= () => { const y=new Date().getFullYear(),a=[]; for(let i=y-3;i<=y+12;i++) a.push(String(i)); return a; };
+const MN   = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const UNITS = ['Strips','Bottles','Tablets','Capsules','Packets','Injections','Syrup (ml)','Cream/Ointment','Drops','Vials','Sachets','Ampules','Other'];
+const DEFAULT_HASH = '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8';
+
+const hashPwd = async pwd => {
+  const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(san(pwd)+'ms_salt_9x'));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+};
+
+// ── Icons ────────────────────────────────────────────────────
+const Ic = ({n,s=15}) => {
+  const w={width:s,height:s,display:'block',flexShrink:0};
+  const p={fill:'none',stroke:'currentColor',strokeWidth:'2',strokeLinecap:'round',strokeLinejoin:'round'};
+  const m={
+    dashboard: <svg style={w} viewBox="0 0 24 24" {...p}><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>,
+    stock:     <svg style={w} viewBox="0 0 24 24" {...p}><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>,
+    purchase:  <svg style={w} viewBox="0 0 24 24" {...p}><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>,
+    sales:     <svg style={w} viewBox="0 0 24 24" {...p}><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>,
+    writeoff:  <svg style={w} viewBox="0 0 24 24" {...p}><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>,
+    report:    <svg style={w} viewBox="0 0 24 24" {...p}><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>,
+    plus:      <svg style={w} viewBox="0 0 24 24" {...p}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+    edit:      <svg style={w} viewBox="0 0 24 24" {...p}><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
+    trash:     <svg style={w} viewBox="0 0 24 24" {...p}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>,
+    search:    <svg style={w} viewBox="0 0 24 24" {...p}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
+    pdf:       <svg style={w} viewBox="0 0 24 24" {...p}><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>,
+    alert:     <svg style={w} viewBox="0 0 24 24" {...p}><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>,
+    lock:      <svg style={w} viewBox="0 0 24 24" {...p}><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>,
+    logout:    <svg style={w} viewBox="0 0 24 24" {...p}><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>,
+    key:       <svg style={w} viewBox="0 0 24 24" {...p}><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>,
+  };
+  return m[n]||null;
+};
+
+// ── Modal wrapper ─────────────────────────────────────────────
+const Modal = ({title,onClose,children,footer}) => (
+  <div className="overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
+    <div className="modal">
+      <h3>{title}</h3>
+      {children}
+      {footer&&<div className="mfooter">{footer}</div>}
+    </div>
+  </div>
+);
+
+// ── LOGIN ────────────────────────────────────────────────────
+const LoginPage = ({onLogin}) => {
+  const [user,setUser]=useState('');
+  const [pwd,setPwd]=useState('');
+  const [err,setErr]=useState('');
+  const [busy,setBusy]=useState(false);
+  const [mode,setMode]=useState('login'); // login | change
+  const [np1,setNp1]=useState('');
+  const [np2,setNp2]=useState('');
+
+  const doLogin = async e => {
+    e.preventDefault();
+    if(!user||!pwd) return setErr('Enter username and password.');
+    setBusy(true); setErr('');
+    const storedUser = load('auth_user','admin');
+    const storedHash = load('auth_hash',DEFAULT_HASH);
+    const h = await hashPwd(pwd);
+    if(san(user)===storedUser&&h===storedHash){ save('sess_ts',Date.now()); onLogin(); }
+    else setErr('Wrong username or password.');
+    setBusy(false);
+  };
+
+  const doChange = async e => {
+    e.preventDefault();
+    if(!user) return setErr('Enter a username.');
+    if(np1.length<4) return setErr('Password must be at least 4 characters.');
+    if(np1!==np2) return setErr('Passwords do not match.');
+    const h=await hashPwd(np1);
+    save('auth_hash',h); save('auth_user',san(user));
+    setMode('login'); setErr(''); setNp1(''); setNp2('');
+    alert('Password set! Please login now.');
+  };
+
+  return (
+    <div className="login-wrap">
+      <div className="login-card">
+        <div className="login-logo">
+          <div className="login-logo-icon"><Ic n={mode==='login'?'lock':'key'} s={26}/></div>
+          <h1>MediStock</h1>
+          <p>{mode==='login'?'Medical Shop Inventory':'Set New Password'}</p>
+        </div>
+        {err&&<div className="login-err"><Ic n="alert" s={13}/>{err}</div>}
+        {mode==='login'?(
+          <form onSubmit={doLogin}>
+            <div className="lfg"><label>Username</label><input value={user} onChange={e=>setUser(e.target.value)} placeholder="admin" autoComplete="username"/></div>
+            <div className="lfg"><label>Password</label><input type="password" value={pwd} onChange={e=>setPwd(e.target.value)} placeholder="Enter password" autoComplete="current-password"/></div>
+            <button className="login-btn" type="submit" disabled={busy}>{busy?'Checking…':'Login →'}</button>
+            <div className="login-hint">Default: <b>admin</b> / <b>password</b><br/>Change password after first login.</div>
+            <span className="cplink" onClick={()=>{setMode('change');setErr('');}}>🔑 Change / Set Password</span>
+          </form>
+        ):(
+          <form onSubmit={doChange}>
+            <div className="lfg"><label>Username</label><input value={user} onChange={e=>setUser(e.target.value)} placeholder="e.g. admin"/></div>
+            <div className="lfg"><label>New Password (min 4 chars)</label><input type="password" value={np1} onChange={e=>setNp1(e.target.value)} placeholder="New password"/></div>
+            <div className="lfg"><label>Confirm Password</label><input type="password" value={np2} onChange={e=>setNp2(e.target.value)} placeholder="Repeat password"/></div>
+            <button className="login-btn" type="submit">Save Password</button>
+            <span className="cplink" onClick={()=>{setMode('login');setErr('');}}>← Back to Login</span>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ── DASHBOARD ────────────────────────────────────────────────
+const Dashboard = ({purchases,sales,writeoffs}) => {
+  const stockMap = useMemo(()=>{
+    const m={};
+    purchases.forEach(p=>{m[p.medicine]=(m[p.medicine]||0)+sNum(p.qty);});
+    sales.forEach(s=>{m[s.medicine]=(m[s.medicine]||0)-sNum(s.qty);});
+    writeoffs.forEach(w=>{m[w.medicine]=(m[w.medicine]||0)-sNum(w.qty);});
+    return m;
+  },[purchases,sales,writeoffs]);
+
+  const totalStock=Object.values(stockMap).reduce((a,b)=>a+Math.max(0,b),0);
+  const totPurch  =purchases.reduce((a,p)=>a+sNum(p.costPrice)*sNum(p.qty),0);
+  const totRev    =sales.reduce((a,s)=>a+sNum(s.sellPrice)*sNum(s.qty),0);
+  const totProfit =sales.reduce((a,s)=>a+(sNum(s.sellPrice)-sNum(s.costPrice))*sNum(s.qty),0);
+  const totWoLoss =writeoffs.reduce((a,w)=>a+sNum(w.costPrice)*sNum(w.qty),0);
+  const expiring  =purchases.filter(p=>{const d=dLeft(p.expiry);return d>=0&&d<=30;});
+  const lowStock  =Object.entries(stockMap).filter(([,v])=>v>0&&v<10).map(([k])=>k);
+  const recent    =[...sales].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,5);
+
+  return (
+    <div>
+      <div className="page-header"><h2>Dashboard</h2><p>Overview of your medical shop inventory</p></div>
+      <div className="stat-grid">
+        <div className="stat-card"><div className="stat-label">Total Stock</div><div className="stat-value" style={{color:'var(--accent)'}}>{totalStock}</div><div className="stat-sub">units in stock</div></div>
+        <div className="stat-card"><div className="stat-label">Purchased (all)</div><div className="stat-value" style={{color:'var(--info)',fontSize:18}}>{fmt(totPurch)}</div><div className="stat-sub">{purchases.length} batches</div></div>
+        <div className="stat-card"><div className="stat-label">Sales Revenue</div><div className="stat-value" style={{color:'var(--purple)',fontSize:18}}>{fmt(totRev)}</div><div className="stat-sub">{sales.length} entries</div></div>
+        <div className="stat-card"><div className="stat-label">Net Profit</div><div className="stat-value" style={{color:totProfit>=0?'#16a34a':'var(--danger)',fontSize:18}}>{fmt(totProfit)}</div><div className="stat-sub">excl. write-offs</div></div>
+      </div>
+      {totWoLoss>0&&<div className="alert ao"><Ic n="alert"/><span><b>Write-off loss: {fmt(totWoLoss)}</b> from {writeoffs.length} entries — not counted in profit</span></div>}
+      {expiring.length>0&&<div className="alert aw"><Ic n="alert"/><span><b>{expiring.length} batch(es)</b> expiring in 30 days: {expiring.map(e=>`${e.medicine} (${fD(e.expiry)})`).join(', ')}</span></div>}
+      {lowStock.length>0&&<div className="alert ad"><Ic n="alert"/><span><b>Low stock (&lt;10):</b> {lowStock.join(', ')}</span></div>}
+      <div className="card"><div className="card-title">Recent Sales</div>
+        {recent.length===0?<div className="empty"><p>No sales yet</p></div>:(
+          <div className="twrap"><table>
+            <thead><tr><th>Medicine</th><th>Unit</th><th>Batch</th><th>Qty</th><th>Sell Price</th><th>Profit</th><th>Date</th></tr></thead>
+            <tbody>{recent.map(s=>{const pr=(sNum(s.sellPrice)-sNum(s.costPrice))*sNum(s.qty);return(
+              <tr key={s.id}><td style={{fontWeight:500}}>{s.medicine}</td><td><span className="badge bp">{s.unit||'—'}</span></td><td><span className="badge bb">{s.batchNo}</span></td><td>{s.qty}</td><td className="mono">{fmt(s.sellPrice)}</td><td className={pr>=0?'pp':'pn'}>{fmt(pr)}</td><td style={{color:'var(--text3)',fontSize:11.5}}>{fD(s.date)}</td></tr>
+            );})}</tbody>
+          </table></div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ── STOCK PAGE ───────────────────────────────────────────────
+const StockPage = ({purchases,setPurchases,sales,writeoffs,setWriteoffs}) => {
+  const [search,setSearch]=useState('');
+  const [editM,setEditM]=useState(null);
+  const [woM,setWoM]=useState(null);
+  const [ef,setEf]=useState({});
+  const [wf,setWf]=useState({qty:'',reason:'expired',note:'',date:today()});
+
+  const batchStock=useMemo(()=>purchases.map(p=>{
+    const sold=sales.filter(s=>s.purchaseId===p.id).reduce((a,s)=>a+sNum(s.qty),0);
+    const wo  =writeoffs.filter(w=>w.purchaseId===p.id).reduce((a,w)=>a+sNum(w.qty),0);
+    return{...p,sold,writtenOff:wo,remaining:Math.max(0,sNum(p.qty)-sold-wo)};
+  }),[purchases,sales,writeoffs]);
+
+  const grouped=useMemo(()=>{
+    const m={};
+    batchStock.forEach(b=>{
+      if(!m[b.medicine])m[b.medicine]={total:0,batches:[],unit:b.unit};
+      m[b.medicine].total+=b.remaining;
+      m[b.medicine].batches.push(b);
+    });
+    return m;
+  },[batchStock]);
+
+  const filtered=Object.entries(grouped).filter(([n])=>n.toLowerCase().includes(search.toLowerCase()));
+
+  const getSt=b=>{
+    const d=dLeft(b.expiry);
+    if(d<0) return{l:'Expired',c:'br'};
+    if(d<=30) return{l:`Exp. ${d}d`,c:'by'};
+    if(b.remaining===0) return{l:'Out of Stock',c:'br'};
+    if(b.remaining<10) return{l:'Low Stock',c:'by'};
+    return{l:'In Stock',c:'bg'};
+  };
+
+  const openEdit=b=>{setEf({...b});setEditM(b.id);};
+  const saveEdit=()=>{
+    if(!ef.medicine||!ef.batchNo||!ef.costPrice||!ef.qty||!ef.expiry) return alert('Fill required fields.');
+    const u=purchases.map(p=>p.id===ef.id?{...ef,costPrice:sNum(ef.costPrice),sellPrice:sNum(ef.sellPrice),qty:sNum(ef.qty)}:p);
+    setPurchases(u);save('purchases',u);setEditM(null);
+  };
+  const delBatch=id=>{
+    if(!confirm('Delete this batch entry?')) return;
+    const u=purchases.filter(p=>p.id!==id);setPurchases(u);save('purchases',u);
+  };
+
+  const openWo=b=>{setWoM(b);setWf({qty:'',reason:'expired',note:'',date:today()});};
+  const saveWo=()=>{
+    if(!wf.qty||sNum(wf.qty)<=0) return alert('Enter quantity.');
+    if(sNum(wf.qty)>woM.remaining) return alert(`Only ${woM.remaining} units available.`);
+    const entry={id:uid(),purchaseId:woM.id,medicine:woM.medicine,batchNo:woM.batchNo,unit:woM.unit||'',costPrice:woM.costPrice,qty:sNum(wf.qty),reason:wf.reason,note:san(wf.note),date:wf.date};
+    const u=[...writeoffs,entry];setWriteoffs(u);save('writeoffs',u);setWoM(null);
+  };
+
+  const eSet=(k,v)=>setEf(p=>({...p,[k]:v}));
+  const wSet=(k,v)=>setWf(p=>({...p,[k]:v}));
+
+  return (
+    <div>
+      <div className="page-header"><h2>Stock / Inventory</h2><p>Batch-wise stock with edit, delete and write-off</p></div>
+      <div className="toolbar">
+        <div className="sbox"><Ic n="search"/><input placeholder="Search medicine..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
+      </div>
+      <div className="card">
+        <div className="twrap">
+          {filtered.length===0?<div className="empty"><p>No stock data. Add purchases first.</p></div>:(
+            <table>
+              <thead><tr><th>Medicine</th><th>Unit Type</th><th>Batch</th><th>Remaining</th><th>Cost</th><th>Sell Price</th><th>Expiry</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody>
+                {filtered.flatMap(([name,data])=>
+                  data.batches.map((b,i)=>{
+                    const st=getSt(b);
+                    return(
+                      <tr key={b.id}>
+                        {i===0&&<td style={{fontWeight:600,verticalAlign:'top',paddingTop:13}} rowSpan={data.batches.length}>{name}</td>}
+                        {i===0&&<td style={{verticalAlign:'top',paddingTop:13}} rowSpan={data.batches.length}><span className="badge bp">{data.unit||'—'}</span></td>}
+                        <td><span className="badge bb">{b.batchNo}</span></td>
+                        <td><b>{b.remaining}</b><span style={{color:'var(--text3)',fontSize:11}}> /{b.qty}</span></td>
+                        <td className="mono" style={{fontSize:12}}>{fmt(b.costPrice)}</td>
+                        <td className="mono" style={{fontSize:12}}>{fmt(b.sellPrice)}</td>
+                        <td style={{color:dLeft(b.expiry)<0?'var(--danger)':dLeft(b.expiry)<=30?'var(--warning)':'inherit',fontSize:11.5}}>{fD(b.expiry)}</td>
+                        <td><span className={`badge ${st.c}`}>{st.l}</span></td>
+                        <td>
+                          <div style={{display:'flex',gap:4,flexWrap:'wrap'}}>
+                            <button className="bti" onClick={()=>openEdit(b)}><Ic n="edit"/> Edit</button>
+                            <button className="bti wo" onClick={()=>openWo(b)}><Ic n="writeoff"/> Write-off</button>
+                            <button className="bti del" onClick={()=>delBatch(b.id)}><Ic n="trash"/> Del</button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
+
+      {editM&&<Modal title="Edit Batch" onClose={()=>setEditM(null)} footer={<><button className="btn btn-secondary" onClick={()=>setEditM(null)}>Cancel</button><button className="btn btn-primary" onClick={saveEdit}>Save</button></>}>
+        <div className="mform"><div className="g2">
+          <div className="fg"><label>Medicine *</label><input value={ef.medicine||''} onChange={e=>eSet('medicine',e.target.value)}/></div>
+          <div className="fg"><label>Unit Type</label><select value={ef.unit||''} onChange={e=>eSet('unit',e.target.value)}><option value="">— Select —</option>{UNITS.map(u=><option key={u}>{u}</option>)}</select></div>
+          <div className="fg"><label>Batch No *</label><input value={ef.batchNo||''} onChange={e=>eSet('batchNo',e.target.value)}/></div>
+          <div className="fg"><label>Supplier</label><input value={ef.supplier||''} onChange={e=>eSet('supplier',e.target.value)}/></div>
+          <div className="fg"><label>Cost Price ₹ *</label><input type="number" value={ef.costPrice||''} onChange={e=>eSet('costPrice',e.target.value)}/></div>
+          <div className="fg"><label>Sell Price ₹ *</label><input type="number" value={ef.sellPrice||''} onChange={e=>eSet('sellPrice',e.target.value)}/></div>
+          <div className="fg"><label>Total Qty *</label><input type="number" value={ef.qty||''} onChange={e=>eSet('qty',e.target.value)}/></div>
+          <div className="fg"><label>Expiry Date *</label><input type="date" value={ef.expiry||''} onChange={e=>eSet('expiry',e.target.value)}/></div>
+        </div></div>
+      </Modal>}
+
+      {woM&&<Modal title={`Write-off — ${woM.medicine} · Batch ${woM.batchNo}`} onClose={()=>setWoM(null)} footer={<><button className="btn btn-secondary" onClick={()=>setWoM(null)}>Cancel</button><button className="btn btn-orange" onClick={saveWo}><Ic n="writeoff"/> Confirm Write-off</button></>}>
+        <div className="mform">
+          <div className="warnpill"><Ic n="alert" s={13}/>Available: <b>{woM.remaining} {woM.unit||'units'}</b> · Cost: <b>{fmt(woM.costPrice)}</b>/unit</div>
+          <div className="g2">
+            <div className="fg"><label>Qty to Write-off *</label><input type="number" value={wf.qty} onChange={e=>wSet('qty',e.target.value)} placeholder={`Max ${woM.remaining}`}/></div>
+            <div className="fg"><label>Reason</label><select value={wf.reason} onChange={e=>wSet('reason',e.target.value)}>
+              <option value="expired">Expired</option><option value="misplaced">Misplaced / Lost</option>
+              <option value="damaged">Damaged</option><option value="returned">Returned to Supplier</option>
+              <option value="stolen">Stolen</option><option value="other">Other</option>
+            </select></div>
+            <div className="fg"><label>Date</label><input type="date" value={wf.date} onChange={e=>wSet('date',e.target.value)}/></div>
+            <div className="fg"><label>Note (what happened?)</label><input value={wf.note} onChange={e=>wSet('note',e.target.value)} placeholder="e.g. Found expired in stock"/></div>
+          </div>
+          {wf.qty&&sNum(wf.qty)>0&&<div className="warnpill" style={{marginTop:0}}><Ic n="alert" s={13}/>Total cost loss: <b>{fmt(woM.costPrice*sNum(wf.qty))}</b> — tracked separately, NOT in profit.</div>}
+        </div>
+      </Modal>}
+    </div>
+  );
+};
+
+// ── PURCHASE PAGE ────────────────────────────────────────────
+const PurchasePage = ({purchases,setPurchases}) => {
+  const [search,setSearch]=useState('');
+  const [modal,setModal]=useState(false);
+  const [editing,setEditing]=useState(null);
+  const blank={medicine:'',unit:'',batchNo:'',costPrice:'',sellPrice:'',qty:'',expiry:'',date:today(),supplier:''};
+  const [form,setForm]=useState(blank);
+  const f=(k,v)=>setForm(p=>({...p,[k]:v}));
+
+  const openAdd=()=>{setEditing(null);setForm(blank);setModal(true);};
+  const openEdit=p=>{setEditing(p.id);setForm({...p});setModal(true);};
+  const close=()=>{setModal(false);setEditing(null);};
+
+  const handleSave=()=>{
+    if(!form.medicine||!form.batchNo||!form.costPrice||!form.sellPrice||!form.qty||!form.expiry) return alert('Fill all * fields.');
+    const e={...form,medicine:san(form.medicine),batchNo:san(form.batchNo),supplier:san(form.supplier),costPrice:sNum(form.costPrice),sellPrice:sNum(form.sellPrice),qty:sNum(form.qty)};
+    const u=editing?purchases.map(p=>p.id===editing?{...e,id:editing}:p):[...purchases,{...e,id:uid()}];
+    setPurchases(u);save('purchases',u);close();
+  };
+  const del=id=>{if(!confirm('Delete this purchase entry?'))return;const u=purchases.filter(p=>p.id!==id);setPurchases(u);save('purchases',u);};
+
+  const filtered=[...purchases].filter(p=>p.medicine.toLowerCase().includes(search.toLowerCase())||(p.batchNo||'').toLowerCase().includes(search.toLowerCase())).sort((a,b)=>new Date(b.date)-new Date(a.date));
+
+  return (
+    <div>
+      <div className="page-header"><h2>Purchase Records</h2><p>All medicine purchases with batch, unit type, expiry</p></div>
+      <div className="toolbar">
+        <div className="sbox"><Ic n="search"/><input placeholder="Search..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
+        <button className="btn btn-primary" onClick={openAdd}><Ic n="plus"/> Add Purchase</button>
+      </div>
+      <div className="card"><div className="twrap">
+        {filtered.length===0?<div className="empty"><p>No purchases yet</p></div>:(
+          <table>
+            <thead><tr><th>Medicine</th><th>Unit</th><th>Batch</th><th>Cost</th><th>Sell Price</th><th>Qty</th><th>Expiry</th><th>Date</th><th>Supplier</th><th></th></tr></thead>
+            <tbody>{filtered.map(p=>{const dl=dLeft(p.expiry);return(
+              <tr key={p.id}>
+                <td style={{fontWeight:500}}>{p.medicine}</td>
+                <td><span className="badge bp">{p.unit||'—'}</span></td>
+                <td><span className="badge bb">{p.batchNo}</span></td>
+                <td className="mono" style={{fontSize:12}}>{fmt(p.costPrice)}</td>
+                <td className="mono" style={{fontSize:12}}>{fmt(p.sellPrice)}</td>
+                <td>{p.qty}</td>
+                <td style={{color:dl<0?'var(--danger)':dl<=30?'var(--warning)':'inherit',fontSize:11.5}}>{fD(p.expiry)}{dl>=0&&dl<=30?` (${dl}d)`:''}</td>
+                <td style={{color:'var(--text3)',fontSize:11.5}}>{fD(p.date)}</td>
+                <td style={{color:'var(--text2)',fontSize:11.5}}>{p.supplier||'—'}</td>
+                <td><div style={{display:'flex',gap:4}}>
+                  <button className="bti" onClick={()=>openEdit(p)}><Ic n="edit"/> Edit</button>
+                  <button className="bti del" onClick={()=>del(p.id)}><Ic n="trash"/> Del</button>
+                </div></td>
+              </tr>
+            );})}</tbody>
+          </table>
+        )}
+      </div></div>
+
+      {modal&&<Modal title={editing?'Edit Purchase':'Add Purchase'} onClose={close} footer={<><button className="btn btn-secondary" onClick={close}>Cancel</button><button className="btn btn-primary" onClick={handleSave}>Save</button></>}>
+        <div className="mform"><div className="g2">
+          <div className="fg"><label>Medicine Name *</label><input value={form.medicine} onChange={e=>f('medicine',e.target.value)} placeholder="e.g. Paracetamol"/></div>
+          <div className="fg"><label>Unit Type</label><select value={form.unit} onChange={e=>f('unit',e.target.value)}><option value="">— Select unit —</option>{UNITS.map(u=><option key={u}>{u}</option>)}</select></div>
+          <div className="fg"><label>Batch No *</label><input value={form.batchNo} onChange={e=>f('batchNo',e.target.value)} placeholder="e.g. B001"/></div>
+          <div className="fg"><label>Supplier</label><input value={form.supplier} onChange={e=>f('supplier',e.target.value)} placeholder="Optional"/></div>
+          <div className="fg"><label>Cost Price ₹ *</label><input type="number" value={form.costPrice} onChange={e=>f('costPrice',e.target.value)} placeholder="80"/></div>
+          <div className="fg"><label>Sell Price ₹ *</label><input type="number" value={form.sellPrice} onChange={e=>f('sellPrice',e.target.value)} placeholder="105"/></div>
+          <div className="fg"><label>Quantity *</label><input type="number" value={form.qty} onChange={e=>f('qty',e.target.value)} placeholder="100"/></div>
+          <div className="fg"><label>Expiry Date *</label><input type="date" value={form.expiry} onChange={e=>f('expiry',e.target.value)}/></div>
+          <div className="fg" style={{gridColumn:'span 2'}}><label>Purchase Date</label><input type="date" value={form.date} onChange={e=>f('date',e.target.value)}/></div>
+        </div></div>
+      </Modal>}
+    </div>
+  );
+};
+
+// ── SALES PAGE ───────────────────────────────────────────────
+const SalesPage = ({purchases,sales,setSales,writeoffs}) => {
+  const [search,setSearch]=useState('');
+  const [modal,setModal]=useState(false);
+  const [editing,setEditing]=useState(null);
+  const blank={medicine:'',purchaseId:'',batchNo:'',costPrice:'',sellPrice:'',unit:'',qty:'',date:today()};
+  const [form,setForm]=useState(blank);
+  const [batches,setBatches]=useState([]);
+  const f=(k,v)=>setForm(p=>({...p,[k]:v}));
+
+  const getRemaining=useCallback((pid,excl=null)=>{
+    const p=purchases.find(x=>x.id===pid);if(!p)return 0;
+    const sold=sales.filter(s=>s.purchaseId===pid&&s.id!==excl).reduce((a,s)=>a+sNum(s.qty),0);
+    const wo  =writeoffs.filter(w=>w.purchaseId===pid).reduce((a,w)=>a+sNum(w.qty),0);
+    return Math.max(0,sNum(p.qty)-sold-wo);
+  },[purchases,sales,writeoffs]);
+
+  const openAdd=()=>{setEditing(null);setForm(blank);setBatches([]);setModal(true);};
+  const openEdit=s=>{
+    setEditing(s.id);setForm({...s});
+    const bs=purchases.filter(p=>p.medicine===s.medicine&&(getRemaining(p.id,s.id)>0||p.id===s.purchaseId));
+    setBatches(bs);setModal(true);
+  };
+  const close=()=>{setModal(false);setEditing(null);};
+
+  const handleMed=med=>{
+    const bs=purchases.filter(p=>p.medicine===med&&getRemaining(p.id)>0);
+    setBatches(bs);setForm(p=>({...p,medicine:med,purchaseId:'',batchNo:'',costPrice:'',sellPrice:'',unit:''}));
+  };
+  const handleBatch=pid=>{
+    const p=purchases.find(x=>x.id===pid);
+    if(p)setForm(prev=>({...prev,purchaseId:pid,batchNo:p.batchNo,costPrice:p.costPrice,sellPrice:p.sellPrice,unit:p.unit||''}));
+  };
+
+  const handleSave=()=>{
+    if(!form.medicine||!form.purchaseId||!form.qty||!form.sellPrice) return alert('Fill all required fields.');
+    const rem=getRemaining(form.purchaseId,editing);
+    if(sNum(form.qty)>rem) return alert(`Only ${rem} units available.`);
+    const e={...form,medicine:san(form.medicine),qty:sNum(form.qty),sellPrice:sNum(form.sellPrice),costPrice:sNum(form.costPrice)};
+    const u=editing?sales.map(s=>s.id===editing?{...e,id:editing}:s):[...sales,{...e,id:uid()}];
+    setSales(u);save('sales',u);close();
+  };
+  const del=id=>{if(!confirm('Delete this sale?'))return;const u=sales.filter(s=>s.id!==id);setSales(u);save('sales',u);};
+
+  const meds=[...new Set(purchases.map(p=>p.medicine))].sort();
+  const filtered=[...sales].filter(s=>s.medicine.toLowerCase().includes(search.toLowerCase())||(s.batchNo||'').toLowerCase().includes(search.toLowerCase())).sort((a,b)=>new Date(b.date)-new Date(a.date));
+
+  return (
+    <div>
+      <div className="page-header"><h2>Sales Records</h2><p>All sales linked to purchase batches with auto profit</p></div>
+      <div className="toolbar">
+        <div className="sbox"><Ic n="search"/><input placeholder="Search..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
+        <button className="btn btn-primary" onClick={openAdd}><Ic n="plus"/> Add Sale</button>
+      </div>
+      <div className="card"><div className="twrap">
+        {filtered.length===0?<div className="empty"><p>No sales yet</p></div>:(
+          <table>
+            <thead><tr><th>Medicine</th><th>Unit</th><th>Batch</th><th>Cost</th><th>Sell Price</th><th>Qty</th><th>Profit</th><th>Date</th><th></th></tr></thead>
+            <tbody>{filtered.map(s=>{const pr=(sNum(s.sellPrice)-sNum(s.costPrice))*sNum(s.qty);return(
+              <tr key={s.id}>
+                <td style={{fontWeight:500}}>{s.medicine}</td>
+                <td><span className="badge bp">{s.unit||'—'}</span></td>
+                <td><span className="badge bb">{s.batchNo}</span></td>
+                <td className="mono" style={{fontSize:12}}>{fmt(s.costPrice)}</td>
+                <td className="mono" style={{fontSize:12}}>{fmt(s.sellPrice)}</td>
+                <td>{s.qty}</td>
+                <td className={pr>=0?'pp':'pn'}>{fmt(pr)}</td>
+                <td style={{color:'var(--text3)',fontSize:11.5}}>{fD(s.date)}</td>
+                <td><div style={{display:'flex',gap:4}}>
+                  <button className="bti" onClick={()=>openEdit(s)}><Ic n="edit"/> Edit</button>
+                  <button className="bti del" onClick={()=>del(s.id)}><Ic n="trash"/> Del</button>
+                </div></td>
+              </tr>
+            );})}</tbody>
+          </table>
+        )}
+      </div></div>
+
+      {modal&&<Modal title={editing?'Edit Sale':'Add Sale'} onClose={close} footer={<><button className="btn btn-secondary" onClick={close}>Cancel</button><button className="btn btn-primary" onClick={handleSave}>Save</button></>}>
+        <div className="mform">
+          <div className="fg"><label>Medicine *</label>
+            <select value={form.medicine} onChange={e=>handleMed(e.target.value)}>
+              <option value="">Select medicine</option>
+              {meds.map(m=><option key={m}>{m}</option>)}
+            </select>
+          </div>
+          {batches.length>0&&<div className="fg"><label>Batch *</label>
+            <select value={form.purchaseId} onChange={e=>handleBatch(e.target.value)}>
+              <option value="">Select batch</option>
+              {batches.map(b=><option key={b.id} value={b.id}>{b.batchNo} · {b.unit||''} · Cost:{fmt(b.costPrice)} · Avail:{getRemaining(b.id,editing)} · Exp:{fD(b.expiry)}</option>)}
+            </select>
+          </div>}
+          {form.purchaseId&&<div className="infopill"><Ic n="stock" s={13}/>Batch <b>{form.batchNo}</b> · Unit: <b>{form.unit||'—'}</b> · Available: <b>{getRemaining(form.purchaseId,editing)}</b> · Cost: <b>{fmt(form.costPrice)}</b></div>}
+          <div className="g2">
+            <div className="fg"><label>Sell Price ₹ *</label><input type="number" value={form.sellPrice} onChange={e=>f('sellPrice',e.target.value)}/></div>
+            <div className="fg"><label>Quantity *</label><input type="number" value={form.qty} onChange={e=>f('qty',e.target.value)} placeholder={form.purchaseId?`Max ${getRemaining(form.purchaseId,editing)}`:'Qty'}/></div>
+          </div>
+          {form.qty&&form.sellPrice&&form.costPrice&&<div className="calcpill">Profit: ({fmt(form.sellPrice)} − {fmt(form.costPrice)}) × {form.qty} = <b>{fmt((sNum(form.sellPrice)-sNum(form.costPrice))*sNum(form.qty))}</b></div>}
+          <div className="fg"><label>Sale Date</label><input type="date" value={form.date} onChange={e=>f('date',e.target.value)}/></div>
+        </div>
+      </Modal>}
+    </div>
+  );
+};
+
+// ── WRITE-OFF PAGE ───────────────────────────────────────────
+const WriteoffPage = ({writeoffs,setWriteoffs}) => {
+  const [search,setSearch]=useState('');
+  const [editM,setEditM]=useState(null);
+  const [ef,setEf]=useState({});
+
+  const del=id=>{if(!confirm('Delete this write-off?'))return;const u=writeoffs.filter(w=>w.id!==id);setWriteoffs(u);save('writeoffs',u);};
+  const openEdit=w=>{setEf({...w});setEditM(w.id);};
+  const saveEdit=()=>{const u=writeoffs.map(w=>w.id===editM?{...ef,qty:sNum(ef.qty)}:w);setWriteoffs(u);save('writeoffs',u);setEditM(null);};
+  const eSet=(k,v)=>setEf(p=>({...p,[k]:v}));
+
+  const filtered=[...writeoffs].filter(w=>w.medicine.toLowerCase().includes(search.toLowerCase())).sort((a,b)=>new Date(b.date)-new Date(a.date));
+  const totalLoss=filtered.reduce((a,w)=>a+sNum(w.costPrice)*sNum(w.qty),0);
+
+  const RLABELS={expired:'Expired',misplaced:'Misplaced/Lost',damaged:'Damaged',returned:'Returned',stolen:'Stolen',other:'Other'};
+
+  const printPDF=()=>{
+    const{jsPDF}=window.jspdf;const doc=new jsPDF();
+    doc.setFontSize(15);doc.setFont('helvetica','bold');doc.text('MediStock — Write-off Report',14,18);
+    doc.setFontSize(11);doc.setFont('helvetica','normal');
+    doc.text(`Total loss: Rs.${totalLoss.toFixed(2)}   Entries: ${filtered.length}`,14,27);
+    doc.autoTable({startY:34,head:[['Medicine','Unit','Batch','Qty','Cost/Unit','Loss','Reason','Note','Date']],
+      body:filtered.map(w=>[w.medicine,w.unit||'—',w.batchNo,w.qty,'Rs.'+sNum(w.costPrice).toFixed(2),'Rs.'+(sNum(w.costPrice)*sNum(w.qty)).toFixed(2),RLABELS[w.reason]||w.reason,w.note||'—',fD(w.date)]),
+      styles:{fontSize:8},headStyles:{fillColor:[234,88,12]}});
+    doc.save('medistock-writeoffs.pdf');
+  };
+
+  return (
+    <div>
+      <div className="page-header"><h2>Write-offs</h2><p>Expired, damaged or misplaced medicines — cost tracked separately, NOT in profit</p></div>
+      <div style={{background:'var(--orange-light)',border:'1px solid #fed7aa',borderRadius:10,padding:'13px 17px',marginBottom:16,display:'inline-block'}}>
+        <div className="stat-label">Total Write-off Loss</div>
+        <div style={{fontSize:22,fontWeight:700,color:'var(--orange)',marginTop:4}}>{fmt(totalLoss)}</div>
+        <div className="stat-sub">{writeoffs.length} entries · separate from profit/loss</div>
+      </div>
+      <div className="toolbar">
+        <div className="sbox"><Ic n="search"/><input placeholder="Search medicine..." value={search} onChange={e=>setSearch(e.target.value)}/></div>
+        <button className="btn btn-secondary" onClick={printPDF}><Ic n="pdf"/> Download PDF</button>
+      </div>
+      <div className="card"><div className="twrap">
+        {filtered.length===0?<div className="empty"><p>No write-offs yet. Use the "Write-off" button on the Stock page.</p></div>:(
+          <table>
+            <thead><tr><th>Medicine</th><th>Unit</th><th>Batch</th><th>Qty</th><th>Cost/Unit</th><th>Total Loss</th><th>Reason</th><th>Note</th><th>Date</th><th></th></tr></thead>
+            <tbody>{filtered.map(w=>(
+              <tr key={w.id}>
+                <td style={{fontWeight:500}}>{w.medicine}</td>
+                <td><span className="badge bp">{w.unit||'—'}</span></td>
+                <td><span className="badge bb">{w.batchNo}</span></td>
+                <td>{w.qty}</td>
+                <td className="mono" style={{fontSize:12}}>{fmt(w.costPrice)}</td>
+                <td className="pn">{fmt(sNum(w.costPrice)*sNum(w.qty))}</td>
+                <td><span className="badge bo">{RLABELS[w.reason]||w.reason}</span></td>
+                <td><div className="notecell" title={w.note}>{w.note||'—'}</div></td>
+                <td style={{color:'var(--text3)',fontSize:11.5}}>{fD(w.date)}</td>
+                <td><div style={{display:'flex',gap:4}}>
+                  <button className="bti" onClick={()=>openEdit(w)}><Ic n="edit"/> Edit</button>
+                  <button className="bti del" onClick={()=>del(w.id)}><Ic n="trash"/> Del</button>
+                </div></td>
+              </tr>
+            ))}</tbody>
+          </table>
+        )}
+      </div></div>
+
+      {editM&&<Modal title="Edit Write-off" onClose={()=>setEditM(null)} footer={<><button className="btn btn-secondary" onClick={()=>setEditM(null)}>Cancel</button><button className="btn btn-primary" onClick={saveEdit}>Save</button></>}>
+        <div className="mform"><div className="g2">
+          <div className="fg"><label>Quantity</label><input type="number" value={ef.qty||''} onChange={e=>eSet('qty',e.target.value)}/></div>
+          <div className="fg"><label>Reason</label><select value={ef.reason||''} onChange={e=>eSet('reason',e.target.value)}>
+            <option value="expired">Expired</option><option value="misplaced">Misplaced / Lost</option>
+            <option value="damaged">Damaged</option><option value="returned">Returned to Supplier</option>
+            <option value="stolen">Stolen</option><option value="other">Other</option>
+          </select></div>
+          <div className="fg"><label>Date</label><input type="date" value={ef.date||''} onChange={e=>eSet('date',e.target.value)}/></div>
+          <div className="fg"><label>Note</label><input value={ef.note||''} onChange={e=>eSet('note',e.target.value)}/></div>
+        </div></div>
+      </Modal>}
+    </div>
+  );
+};
+
+// ── REPORTS ──────────────────────────────────────────────────
+const ReportPage = ({purchases,sales,writeoffs}) => {
+  const now=new Date();
+  const [month,setMonth]=useState(String(now.getMonth()+1).padStart(2,'0'));
+  const [year,setYear]  =useState(String(now.getFullYear()));
+
+  const fS=sales.filter(s=>{const d=new Date(s.date);return String(d.getMonth()+1).padStart(2,'0')===month&&String(d.getFullYear())===year;});
+  const fP=purchases.filter(p=>{const d=new Date(p.date);return String(d.getMonth()+1).padStart(2,'0')===month&&String(d.getFullYear())===year;});
+  const fW=writeoffs.filter(w=>{const d=new Date(w.date);return String(d.getMonth()+1).padStart(2,'0')===month&&String(d.getFullYear())===year;});
+
+  const tRev =fS.reduce((a,s)=>a+sNum(s.sellPrice)*sNum(s.qty),0);
+  const tCOGS=fS.reduce((a,s)=>a+sNum(s.costPrice)*sNum(s.qty),0);
+  const tProf=tRev-tCOGS;
+  const tPurch=fP.reduce((a,p)=>a+sNum(p.costPrice)*sNum(p.qty),0);
+  const tWo  =fW.reduce((a,w)=>a+sNum(w.costPrice)*sNum(w.qty),0);
+  const mn   =MN[parseInt(month)-1];
+
+  const pdfSales=()=>{
+    const{jsPDF}=window.jspdf;const doc=new jsPDF();
+    doc.setFontSize(15);doc.setFont('helvetica','bold');doc.text('MediStock — Sales Report',14,18);
+    doc.setFontSize(10);doc.setFont('helvetica','normal');
+    doc.text(`Period: ${mn} ${year}   Revenue: Rs.${tRev.toFixed(2)}   Profit: Rs.${tProf.toFixed(2)}`,14,27);
+    doc.autoTable({startY:33,head:[['Medicine','Unit','Batch','Cost','Sell','Qty','Profit','Date']],
+      body:fS.map(s=>[s.medicine,s.unit||'—',s.batchNo,'Rs.'+sNum(s.costPrice).toFixed(2),'Rs.'+sNum(s.sellPrice).toFixed(2),s.qty,'Rs.'+((sNum(s.sellPrice)-sNum(s.costPrice))*sNum(s.qty)).toFixed(2),fD(s.date)]),
+      styles:{fontSize:8},headStyles:{fillColor:[26,107,74]}});
+    doc.save(`sales-${year}-${month}.pdf`);
+  };
+  const pdfPurch=()=>{
+    const{jsPDF}=window.jspdf;const doc=new jsPDF();
+    doc.setFontSize(15);doc.setFont('helvetica','bold');doc.text('MediStock — Purchase Report',14,18);
+    doc.setFontSize(10);doc.setFont('helvetica','normal');
+    doc.text(`Period: ${mn} ${year}   Total: Rs.${tPurch.toFixed(2)}`,14,27);
+    doc.autoTable({startY:33,head:[['Medicine','Unit','Batch','Cost','Sell','Qty','Expiry','Date','Supplier']],
+      body:fP.map(p=>[p.medicine,p.unit||'—',p.batchNo,'Rs.'+sNum(p.costPrice).toFixed(2),'Rs.'+sNum(p.sellPrice).toFixed(2),p.qty,fD(p.expiry),fD(p.date),p.supplier||'—']),
+      styles:{fontSize:8},headStyles:{fillColor:[26,107,74]}});
+    doc.save(`purchases-${year}-${month}.pdf`);
+  };
+  const pdfWo=()=>{
+    const{jsPDF}=window.jspdf;const doc=new jsPDF();
+    doc.setFontSize(15);doc.setFont('helvetica','bold');doc.text('MediStock — Write-off Report',14,18);
+    doc.setFontSize(10);doc.setFont('helvetica','normal');
+    doc.text(`Period: ${mn} ${year}   Loss: Rs.${tWo.toFixed(2)}`,14,27);
+    doc.autoTable({startY:33,head:[['Medicine','Unit','Batch','Qty','Loss','Reason','Note','Date']],
+      body:fW.map(w=>[w.medicine,w.unit||'—',w.batchNo,w.qty,'Rs.'+(sNum(w.costPrice)*sNum(w.qty)).toFixed(2),w.reason,w.note||'—',fD(w.date)]),
+      styles:{fontSize:8},headStyles:{fillColor:[234,88,12]}});
+    doc.save(`writeoffs-${year}-${month}.pdf`);
+  };
+  const pdfMonthly=()=>{
+    const{jsPDF}=window.jspdf;const doc=new jsPDF();
+    doc.setFontSize(15);doc.setFont('helvetica','bold');doc.text('MediStock — Monthly Summary',14,18);
+    doc.setFontSize(10);doc.setFont('helvetica','normal');doc.text(`${mn} ${year}`,14,27);
+    doc.autoTable({startY:33,head:[['Metric','Value']],
+      body:[
+        ['Purchases (entries)',fP.length],['Amount Purchased','Rs.'+tPurch.toFixed(2)],
+        ['Sales (entries)',fS.length],['Sales Revenue','Rs.'+tRev.toFixed(2)],
+        ['Cost of Goods Sold','Rs.'+tCOGS.toFixed(2)],['Net Profit','Rs.'+tProf.toFixed(2)],
+        ['Write-off (entries)',fW.length],['Write-off Loss','Rs.'+tWo.toFixed(2)],
+        ['Effective Profit (after write-off)','Rs.'+(tProf-tWo).toFixed(2)],
+      ],
+      styles:{fontSize:10},headStyles:{fillColor:[26,107,74]}});
+    if(fS.length>0) doc.autoTable({startY:doc.lastAutoTable.finalY+8,head:[['Medicine','Unit','Batch','Qty','Revenue','Profit']],
+      body:fS.map(s=>[s.medicine,s.unit||'—',s.batchNo,s.qty,'Rs.'+(sNum(s.sellPrice)*sNum(s.qty)).toFixed(2),'Rs.'+((sNum(s.sellPrice)-sNum(s.costPrice))*sNum(s.qty)).toFixed(2)]),
+      styles:{fontSize:8},headStyles:{fillColor:[59,130,246]}});
+    doc.save(`summary-${year}-${month}.pdf`);
+  };
+
+  return (
+    <div>
+      <div className="page-header"><h2>Reports</h2><p>Monthly summary — filter by month &amp; year, download any report as PDF</p></div>
+      <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:18,flexWrap:'wrap'}}>
+        <select className="flt" value={month} onChange={e=>setMonth(e.target.value)}>
+          {MN.map((m,i)=><option key={m} value={String(i+1).padStart(2,'0')}>{m}</option>)}
+        </select>
+        <select className="flt" value={year} onChange={e=>setYear(e.target.value)}>
+          {years().map(y=><option key={y}>{y}</option>)}
+        </select>
+        <div style={{width:1,height:28,background:'var(--border)',margin:'0 2px'}}/>
+        <button className="btn btn-secondary btn-sm" style={{height:35}} onClick={pdfSales}><Ic n="pdf"/> Sales PDF</button>
+        <button className="btn btn-secondary btn-sm" style={{height:35}} onClick={pdfPurch}><Ic n="pdf"/> Purchase PDF</button>
+        <button className="btn btn-orange btn-sm" style={{height:35}} onClick={pdfWo}><Ic n="pdf"/> Write-off PDF</button>
+        <button className="btn btn-primary btn-sm" style={{height:35}} onClick={pdfMonthly}><Ic n="pdf"/> Monthly Summary</button>
+      </div>
+
+      <div className="stat-grid">
+        <div className="stat-card"><div className="stat-label">Purchased</div><div className="stat-value" style={{color:'var(--info)',fontSize:18}}>{fmt(tPurch)}</div><div className="stat-sub">{fP.length} entries</div></div>
+        <div className="stat-card"><div className="stat-label">Sales Revenue</div><div className="stat-value" style={{color:'var(--purple)',fontSize:18}}>{fmt(tRev)}</div><div className="stat-sub">{fS.length} entries</div></div>
+        <div className="stat-card"><div className="stat-label">Net Profit</div><div className="stat-value" style={{color:tProf>=0?'#16a34a':'var(--danger)',fontSize:18}}>{fmt(tProf)}</div><div className="stat-sub">revenue − cost</div></div>
+        <div className="stat-card"><div className="stat-label">Write-off Loss</div><div className="stat-value" style={{color:'var(--orange)',fontSize:18}}>{fmt(tWo)}</div><div className="stat-sub">{fW.length} entries</div></div>
+      </div>
+      {tWo>0&&<div className="alert ao"><Ic n="alert"/><span>Effective profit after write-offs: <b>{fmt(tProf-tWo)}</b></span></div>}
+
+      <div className="card"><div className="card-title">Sales — {mn} {year}</div>
+        {fS.length===0?<div className="empty"><p>No sales in this period</p></div>:(
+          <div className="twrap"><table>
+            <thead><tr><th>Medicine</th><th>Unit</th><th>Batch</th><th>Cost</th><th>Sell</th><th>Qty</th><th>Profit</th><th>Date</th></tr></thead>
+            <tbody>{fS.map(s=>{const pr=(sNum(s.sellPrice)-sNum(s.costPrice))*sNum(s.qty);return(
+              <tr key={s.id}><td style={{fontWeight:500}}>{s.medicine}</td><td><span className="badge bp">{s.unit||'—'}</span></td><td><span className="badge bb">{s.batchNo}</span></td><td className="mono" style={{fontSize:11.5}}>{fmt(s.costPrice)}</td><td className="mono" style={{fontSize:11.5}}>{fmt(s.sellPrice)}</td><td>{s.qty}</td><td className={pr>=0?'pp':'pn'}>{fmt(pr)}</td><td style={{color:'var(--text3)',fontSize:11.5}}>{fD(s.date)}</td></tr>
+            );})}</tbody>
+          </table></div>
+        )}
+      </div>
+
+      <div className="card"><div className="card-title">Purchases — {mn} {year}</div>
+        {fP.length===0?<div className="empty"><p>No purchases in this period</p></div>:(
+          <div className="twrap"><table>
+            <thead><tr><th>Medicine</th><th>Unit</th><th>Batch</th><th>Cost</th><th>Sell</th><th>Qty</th><th>Expiry</th><th>Date</th></tr></thead>
+            <tbody>{fP.map(p=>(
+              <tr key={p.id}><td style={{fontWeight:500}}>{p.medicine}</td><td><span className="badge bp">{p.unit||'—'}</span></td><td><span className="badge bb">{p.batchNo}</span></td><td className="mono" style={{fontSize:11.5}}>{fmt(p.costPrice)}</td><td className="mono" style={{fontSize:11.5}}>{fmt(p.sellPrice)}</td><td>{p.qty}</td><td style={{fontSize:11.5}}>{fD(p.expiry)}</td><td style={{color:'var(--text3)',fontSize:11.5}}>{fD(p.date)}</td></tr>
+            ))}</tbody>
+          </table></div>
+        )}
+      </div>
+
+      {fW.length>0&&<div className="card"><div className="card-title" style={{color:'var(--orange)'}}>Write-offs — {mn} {year}</div>
+        <div className="twrap"><table>
+          <thead><tr><th>Medicine</th><th>Unit</th><th>Batch</th><th>Qty</th><th>Loss</th><th>Reason</th><th>Note</th><th>Date</th></tr></thead>
+          <tbody>{fW.map(w=>(
+            <tr key={w.id}><td style={{fontWeight:500}}>{w.medicine}</td><td><span className="badge bp">{w.unit||'—'}</span></td><td><span className="badge bb">{w.batchNo}</span></td><td>{w.qty}</td><td className="pn">{fmt(sNum(w.costPrice)*sNum(w.qty))}</td><td><span className="badge bo">{w.reason}</span></td><td style={{fontSize:11.5,color:'var(--text2)'}}>{w.note||'—'}</td><td style={{color:'var(--text3)',fontSize:11.5}}>{fD(w.date)}</td></tr>
+          ))}</tbody>
+        </table></div>
+      </div>}
+    </div>
+  );
+};
+
+// ── APP ROOT ─────────────────────────────────────────────────
+const App = () => {
+  const [loggedIn,setLoggedIn]=useState(()=>{
+    const ts=load('sess_ts',0);
+    return ts&&(Date.now()-ts)<12*60*60*1000;
+  });
+  const [page,setPage]=useState('dashboard');
+  const [purchases, setPurchases]=useState(()=>load('purchases',[]));
+  const [sales,     setSales]    =useState(()=>load('sales',[]));
+  const [writeoffs, setWriteoffs]=useState(()=>load('writeoffs',[]));
+
+  const logout=()=>{save('sess_ts',0);setLoggedIn(false);};
+
+  if(!loggedIn) return <LoginPage onLogin={()=>setLoggedIn(true)}/>;
+
+  const NAV=[
+    {id:'dashboard',label:'Dashboard', icon:'dashboard'},
+    {id:'stock',    label:'Stock',      icon:'stock'},
+    {id:'purchase', label:'Purchases',  icon:'purchase'},
+    {id:'sales',    label:'Sales',      icon:'sales'},
+    {id:'writeoffs',label:'Write-offs', icon:'writeoff'},
+    {id:'report',   label:'Reports',    icon:'report'},
+  ];
+
+  return (
+    <>
+      <div className="sidebar">
+        <div className="sidebar-logo"><h1>MediStock</h1><p>Medical Shop Inventory</p></div>
+        <nav className="sidebar-nav">
+          {NAV.map(n=>(
+            <button key={n.id} className={`nav-item${page===n.id?' active':''}`} onClick={()=>setPage(n.id)}>
+              <Ic n={n.icon}/>{n.label}
+            </button>
+          ))}
+        </nav>
+        <div className="sidebar-footer">
+          <p>Data saved locally · Free forever</p>
+          <button className="logout-btn" onClick={logout}><Ic n="logout" s={13}/>Logout</button>
+        </div>
+      </div>
+      <div className="main">
+        {page==='dashboard' &&<Dashboard purchases={purchases} sales={sales} writeoffs={writeoffs}/>}
+        {page==='stock'     &&<StockPage purchases={purchases} setPurchases={setPurchases} sales={sales} writeoffs={writeoffs} setWriteoffs={setWriteoffs}/>}
+        {page==='purchase'  &&<PurchasePage purchases={purchases} setPurchases={setPurchases}/>}
+        {page==='sales'     &&<SalesPage purchases={purchases} sales={sales} setSales={setSales} writeoffs={writeoffs}/>}
+        {page==='writeoffs' &&<WriteoffPage writeoffs={writeoffs} setWriteoffs={setWriteoffs}/>}
+        {page==='report'    &&<ReportPage purchases={purchases} sales={sales} writeoffs={writeoffs}/>}
+      </div>
+    </>
+  );
+};
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
