@@ -1,12 +1,13 @@
 {
   "name": "MediStock — Medical Shop Inventory",
   "short_name": "MediStock",
-  "description": "Medical shop inventory management with stock tracking, sales, purchases, and write-offs",
+  "description": "Medical shop inventory with offline sync, multi-user support, and cloud backup",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f0f4f8",
   "theme_color": "#1a6b4a",
   "orientation": "any",
+  "scope": "/",
   "icons": [
     {
       "src": "/icon-192.png",
@@ -15,7 +16,7 @@
       "purpose": "any"
     },
     {
-      "src": "/icon-192.png",
+      "src": "/icon-192-maskable.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
@@ -27,7 +28,7 @@
       "purpose": "any"
     },
     {
-      "src": "/icon-512.png",
+      "src": "/icon-512-maskable.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
@@ -38,12 +39,18 @@
       "src": "/screenshot-desktop.png",
       "sizes": "1280x720",
       "type": "image/png",
-      "form_factor": "wide"
+      "form_factor": "wide",
+      "label": "MediStock Dashboard on Desktop"
     },
     {
       "src": "/screenshot-mobile.png",
-      "sizes": "750x1334",
-      "type": "image/png"
+           "sizes": "750x1334",
+      "type": "image/png",
+      "label": "MediStock Mobile View"
     }
-  ]
+  ],
+  "categories": ["business", "productivity", "utilities"],
+  "lang": "en",
+  "dir": "ltr",
+  "prefer_related_applications": false
 }
