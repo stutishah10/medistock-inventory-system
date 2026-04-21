@@ -343,7 +343,7 @@ const initSupabase = () => {
 };
 
 // ═══════════════════════════════════════════════════════════════
-// SYNC ENGINE (FIXED)
+// SYNC ENGINE (FIXED FOR SUPABASE)
 // ═══════════════════════════════════════════════════════════════
 const SyncEngine = {
   isOnline: () => navigator.onLine,
@@ -368,12 +368,30 @@ const SyncEngine = {
     else banner.classList.remove('show');
   },
 
+  // Convert camelCase to snake_case for Supabase
+  toSnakeCase: (obj) => {
+    const result = {};
+    for (const key in obj) {
+      if (obj.hasOwnProperty(key)) {
+        const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+        result[snakeKey] = obj[key];
+      }
+    }
+    return result;
+  },
+
   syncToSupabase: async (userId, table, type, data) => {
-    if(!navigator.onLine || !supabase) return false;
+    if(!navigator.onLine || !supabase) {
+      console.log('Offline or Supabase not initialized');
+      return false;
+    }
     
     try {
       let result;
-      const payload = {...data, user_id: userId};
+      // Convert data to snake_case for Supabase
+      const payload = SyncEngine.toSnakeCase({...data, user_id: userId});
+      
+      console.log('Syncing to Supabase:', table, type, payload);
       
       if(type === 'insert') {
         result = await supabase.from(table).insert([payload]);
@@ -388,6 +406,7 @@ const SyncEngine = {
         return false;
       }
       
+      console.log('✅ Synced successfully!');
       return true;
     } catch(err) {
       console.error('Sync failed:', err);
@@ -939,12 +958,12 @@ const PurchasePage = ({purchases,setPurchases,userId}) => {
     ...form,
     id: editing || uid(),
     medicine: san(form.medicine),
-    batch_no: san(form.batchNo),  // Note: supabase uses batch_no not batchNo
+    batchNo: san(form.batchNo),
     supplier: san(form.supplier),
-    cost_price: sNum(form.costPrice),
-    sell_price: sNum(form.sellPrice),
+    costPrice: sNum(form.costPrice),
+    sellPrice: sNum(form.sellPrice),
     qty: sNum(form.qty),
-    user_id: userId
+    user_id: userId  // This will be converted to snake_case by SyncEngine
   };
   
   const u = editing 
@@ -953,7 +972,7 @@ const PurchasePage = ({purchases,setPurchases,userId}) => {
     
   setPurchases(u);
   
-  // Sync to Supabase
+  // Sync to Supabase - data will be auto-converted to snake_case
   await SyncEngine.pushLocalChange(userId, 'purchases', editing ? 'update' : 'insert', e);
   
   close();
