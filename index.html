@@ -635,6 +635,7 @@ const LoginPage = ({onLogin}) => {
 // ═══════════════════════════════════════════════════════════════
 const useUserData = (userId, key, defaultValue = []) => {
   const [data, setData] = useState(() => load(key, userId, defaultValue));
+  const [syncing, setSyncing] = useState(false);
 
   const setDataAndSync = useCallback((newData) => {
     setData(newData);
@@ -654,6 +655,7 @@ const useUserData = (userId, key, defaultValue = []) => {
       const table = tableMap[key];
       if(!table) return;
       
+      setSyncing(true);
       try {
         const { data: cloudData, error } = await supabase
           .from(table)
@@ -665,18 +667,18 @@ const useUserData = (userId, key, defaultValue = []) => {
         if(cloudData && cloudData.length > 0) {
           setData(cloudData);
           save(key, userId, cloudData);
-          console.log('Loaded from cloud:', cloudData.length, 'rows');
         }
       } catch(e) { 
         console.error('Cloud load failed:', e); 
       }
+      setSyncing(false);
     };
     
     loadFromCloud();
   }, [userId, key]);
 
-  return [data, setDataAndSync];
-};
+  return [data, setDataAndSync, syncing];  // ← This MUST be inside the function
+};  // ← Make sure this closing bracket exists
 
   // Load from cloud on mount
   useEffect(() => {
