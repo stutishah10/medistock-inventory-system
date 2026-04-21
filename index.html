@@ -343,7 +343,7 @@ const initSupabase = () => {
 };
 
 // ═══════════════════════════════════════════════════════════════
-// SYNC ENGINE
+// SYNC ENGINE (FIXED)
 // ═══════════════════════════════════════════════════════════════
 const SyncEngine = {
   isOnline: () => navigator.onLine,
@@ -366,61 +366,66 @@ const SyncEngine = {
     else banner.classList.remove('show');
   },
 
-  syncToCloud: async (userId) => {
-    if(!navigator.onLine || !supabase) return;
+  // IMMEDIATE sync when online
+  syncToSupabase: async (userId, table, type, data) => {
+    if(!navigator.onLine || !supabase) {
+      console.log('Offline - queued for later');
+      return false;
+    }
     
+    try {
+      let result;
+      const payload = {...data, user_id: userId};
+      
+      if(type === 'insert') {
+        result = await supabase.from(table).insert([payload]);
+      } else if(type === 'update') {
+        result = await supabase.from(table).update(payload).eq('id', data.id);
+      } else if(type === 'delete') {
+        result = await supabase.from(table).delete().eq('id', data.id);
+      }
+      
+      if(result.error) {
+        console.error('Supabase error:', result.error);
+        return false;
+      }
+      
+      console.log('✅ Synced to Supabase:', table, data.id || 'new');
+      return true;
+    } catch(err) {
+      console.error('Sync failed:', err);
+      return false;
+    }
+  },
+
+  pushLocalChange: async (userId, table, type, data) => {
+    // Try immediate sync first
+    const synced = await SyncEngine.syncToSupabase(userId, table, type, data);
+    
+    if(!synced) {
+      // Queue for later if failed
+      SyncQueue.add(userId, { table, type, data });
+      SyncEngine.showToast('Saved offline. Will sync later.');
+    } else {
+      SyncEngine.showToast('Synced to cloud!');
+    }
+  },
+  
+  syncQueued: async (userId) => {
     const queue = SyncQueue.getQueue(userId);
     if(queue.length === 0) return;
     
     SyncEngine.showToast(`Syncing ${queue.length} items...`);
     
     for(const op of queue) {
-      try {
-        const table = op.table;
-        const data = {...op.data, user_id: userId};
-        
-        if(op.type === 'insert') {
-          await supabase.from(table).insert([data]);
-        } else if(op.type === 'update') {
-          await supabase.from(table).update(data).eq('id', op.data.id);
-        } else if(op.type === 'delete') {
-          await supabase.from(table).delete().eq('id', op.data.id);
-        }
-        
-        SyncQueue.remove(userId, op.id);
-      } catch(err) {
-        console.error('Sync failed for:', op, err);
-      }
+      const success = await SyncEngine.syncToSupabase(userId, op.table, op.type, op.data);
+      if(success) SyncQueue.remove(userId, op.id);
     }
     
     SyncEngine.showToast('Sync complete!');
     window.dispatchEvent(new CustomEvent('sync-complete'));
-  },
-
-  fetchFromCloud: async (userId, table) => {
-    if(!navigator.onLine || !supabase) return null;
-    const { data, error } = await supabase.from(table).select('*').eq('user_id', userId);
-    if(error) throw error;
-    return data || [];
-  },
-
-  pushLocalChange: (userId, table, type, data) => {
-    SyncQueue.add(userId, { table, type, data });
-    if(navigator.onLine) {
-      SyncEngine.syncToCloud(userId);
-    } else {
-      SyncEngine.showToast('Saved offline. Will sync later.');
-    }
   }
 };
-
-// Network listeners
-window.addEventListener('online', () => {
-  SyncEngine.updateOfflineBanner();
-  const currentUser = load('current_user', 'system', null);
-  if(currentUser?.id) SyncEngine.syncToCloud(currentUser.id);
-});
-window.addEventListener('offline', SyncEngine.updateOfflineBanner);
 
 // ═══════════════════════════════════════════════════════════════
 // ICONS
@@ -635,18 +640,48 @@ const LoginPage = ({onLogin}) => {
 // ═══════════════════════════════════════════════════════════════
 const useUserData = (userId, key, defaultValue = []) => {
   const [data, setData] = useState(() => load(key, userId, defaultValue));
-  const [syncing, setSyncing] = useState(false);
 
   const setDataAndSync = useCallback((newData) => {
     setData(newData);
     save(key, userId, newData);
-    
-    // Queue for sync
-    if(Array.isArray(newData)) {
-      // For arrays, we sync the whole state (simplified)
-      // In production, you'd diff and sync individual changes
-    }
   }, [userId, key]);
+
+  // Load from cloud on mount
+  useEffect(() => {
+    const loadFromCloud = async () => {
+      if(!navigator.onLine || !supabase) return;
+      
+      const tableMap = {
+        'purchases': 'purchases',
+        'sales': 'sales',
+        'writeoffs': 'writeoffs'
+      };
+      const table = tableMap[key];
+      if(!table) return;
+      
+      try {
+        const { data: cloudData, error } = await supabase
+          .from(table)
+          .select('*')
+          .eq('user_id', userId);
+          
+        if(error) throw error;
+        
+        if(cloudData && cloudData.length > 0) {
+          setData(cloudData);
+          save(key, userId, cloudData);
+          console.log('Loaded from cloud:', cloudData.length, 'rows');
+        }
+      } catch(e) { 
+        console.error('Cloud load failed:', e); 
+      }
+    };
+    
+    loadFromCloud();
+  }, [userId, key]);
+
+  return [data, setDataAndSync];
+};
 
   // Load from cloud on mount
   useEffect(() => {
@@ -685,7 +720,7 @@ const useUserData = (userId, key, defaultValue = []) => {
   }, [userId, key]);
 
   return [data, setDataAndSync, syncing];
-};
+
 
 // ═══════════════════════════════════════════════════════════════
 // MOBILE HEADER
@@ -935,19 +970,33 @@ const PurchasePage = ({purchases,setPurchases,userId}) => {
   const openEdit=p=>{setEditing(p.id);setForm({...p});setModal(true);};
   const close=()=>{setModal(false);setEditing(null);};
 
-  const handleSave=()=>{
-    if(!form.medicine||!form.batchNo||!form.costPrice||!form.sellPrice||!form.qty||!form.expiry) return alert('Fill all * fields.');
-    const e={...form,medicine:san(form.medicine),batchNo:san(form.batchNo),supplier:san(form.supplier),costPrice:sNum(form.costPrice),sellPrice:sNum(form.sellPrice),qty:sNum(form.qty)};
-    const u=editing?purchases.map(p=>p.id===editing?{...e,id:editing}:p):[...purchases,{...e,id:uid()}];
-    setPurchases(u);
+  const handleSave = async () => {
+  if(!form.medicine||!form.batchNo||!form.costPrice||!form.sellPrice||!form.qty||!form.expiry) 
+    return alert('Fill all * fields.');
     
-    if(editing) {
-      SyncEngine.pushLocalChange(userId, 'purchases', 'update', e);
-    } else {
-      SyncEngine.pushLocalChange(userId, 'purchases', 'insert', {...e,id:uid()});
-    }
-    close();
+  const e = {
+    ...form,
+    id: editing || uid(),
+    medicine: san(form.medicine),
+    batch_no: san(form.batchNo),  // Note: supabase uses batch_no not batchNo
+    supplier: san(form.supplier),
+    cost_price: sNum(form.costPrice),
+    sell_price: sNum(form.sellPrice),
+    qty: sNum(form.qty),
+    user_id: userId
   };
+  
+  const u = editing 
+    ? purchases.map(p => p.id === editing ? {...e, id: editing} : p)
+    : [...purchases, e];
+    
+  setPurchases(u);
+  
+  // Sync to Supabase
+  await SyncEngine.pushLocalChange(userId, 'purchases', editing ? 'update' : 'insert', e);
+  
+  close();
+};
   
   const del=id=>{
     if(!confirm('Delete this purchase?'))return;
