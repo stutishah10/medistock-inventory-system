@@ -263,7 +263,7 @@ select.flt:focus{border-color:var(--accent);}
 <!-- Offline Banner -->
 <div id="offline-banner" class="offline-banner">
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/><path d="M10.71 5.05A16 16 0 0 1 22.58 9M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
-  You're offline. Changes will sync when connection returns.
+  You're offline. Changes will sync when connection retur
 </div>
 
 <!-- Sync Toast -->
@@ -351,6 +351,7 @@ const SyncEngine = {
   showToast: (msg) => {
     const toast = document.getElementById('sync-toast');
     const bar = document.getElementById('sync-bar');
+    if(!toast || !bar) return;
     document.getElementById('sync-msg').textContent = msg;
     toast.classList.add('show');
     bar.classList.add('active');
@@ -362,16 +363,13 @@ const SyncEngine = {
 
   updateOfflineBanner: () => {
     const banner = document.getElementById('offline-banner');
+    if(!banner) return;
     if(!navigator.onLine) banner.classList.add('show');
     else banner.classList.remove('show');
   },
 
-  // IMMEDIATE sync when online
   syncToSupabase: async (userId, table, type, data) => {
-    if(!navigator.onLine || !supabase) {
-      console.log('Offline - queued for later');
-      return false;
-    }
+    if(!navigator.onLine || !supabase) return false;
     
     try {
       let result;
@@ -390,7 +388,6 @@ const SyncEngine = {
         return false;
       }
       
-      console.log('✅ Synced to Supabase:', table, data.id || 'new');
       return true;
     } catch(err) {
       console.error('Sync failed:', err);
@@ -399,11 +396,9 @@ const SyncEngine = {
   },
 
   pushLocalChange: async (userId, table, type, data) => {
-    // Try immediate sync first
     const synced = await SyncEngine.syncToSupabase(userId, table, type, data);
     
     if(!synced) {
-      // Queue for later if failed
       SyncQueue.add(userId, { table, type, data });
       SyncEngine.showToast('Saved offline. Will sync later.');
     } else {
